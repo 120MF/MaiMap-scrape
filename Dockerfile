@@ -9,6 +9,7 @@ COPY . /app
 
 RUN apt-get update -qq -y && \
     apt-get install -y \
+        cron \
         libasound2 \
         libatk-bridge2.0-0 \
         libgtk-4-1 \
@@ -28,5 +29,17 @@ RUN unzip -j chromedriver-linux64.zip chromedriver-linux64/chromedriver && \
     mv chromedriver /usr/local/bin/ && \
     pip install --no-cache-dir -r requirements.txt
 
-# 运行脚本
-CMD ["python", "scrape.py"]
+# 添加 crontab 文件到 /etc/cron.d/
+COPY cron /etc/cron.d/mapcron
+
+# 给 crontab 文件添加执行权限
+RUN chmod 0644 /etc/cron.d/mapcron
+
+# 应用 crontab 文件
+RUN crontab /etc/cron.d/mapcron
+
+# 创建一个日志文件以便 cron 可以写入日志
+RUN touch /var/log/cron.log
+
+# 启动 cron 服务并运行脚本
+CMD cron && tail -f /var/log/cron.log

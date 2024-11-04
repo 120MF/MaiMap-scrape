@@ -1,0 +1,1 @@
+0 */12 * * * python /app/scrape.py >> /var/log/cron.log 2>&1
