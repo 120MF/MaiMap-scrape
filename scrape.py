@@ -41,10 +41,10 @@ store_list = soup.find('ul', class_='store_list')
 
 # 数据库连接配置
 db_config = {
-    'host': 'maimap-arcades-mysql.ns-lpkl7gos.svc',
+    'host': 'maimap-mysql.mfnest.tech',
     'port': 3306,
     'user': 'root',
-    'password': 'rhdb4cml',
+    'password': 'yelsjdhl',
     'database': 'maimap',
     'charset': 'utf8mb4'
 }
