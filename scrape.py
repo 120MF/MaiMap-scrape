@@ -62,6 +62,7 @@ id = 1
 for li in store_list.find_all('li'):
     store_name = li.find('span', class_='store_name').text.strip()
     store_address = li.find('span', class_='store_address').text.strip()
+    store_type = "mai"
 
     if id > row_count:
         # 发送请求获取位置信息
@@ -85,8 +86,8 @@ for li in store_list.find_all('li'):
         # 更新数据库
         cursor.execute("""
             INSERT INTO arcades (store_name, store_address, id, store_lat, store_lng, store_pos)
-            VALUES (%s, %s, %s, %s, %s, ST_GeomFromText('POINT(%s %s)'))
-        """, (store_name, store_address, id, store_lat, store_lng, store_lng, store_lat))
+            VALUES (%s, %s, %s, %s, %s, ST_GeomFromText('POINT(%s %s)', %s))
+        """, (store_name, store_address, id, store_lat, store_lng, store_lng, store_lat, store_type))
         connection.commit()
 
     id += 1
