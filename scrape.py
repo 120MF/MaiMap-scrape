@@ -86,7 +86,7 @@ for li in store_list.find_all('li'):
         # 更新数据库
         cursor.execute("""
             INSERT INTO arcades (store_name, store_address, store_id, store_lat, store_lng, store_pos, store_type)
-            VALUES (%s, %s, %s, %s, %s, ST_GeomFromText('POINT(%s %s)', %s))
+            VALUES (%s, %s, %d, %s, %s, ST_GeomFromText('POINT(%s %s)', %s))
         """, (store_name, store_address, id, store_lat, store_lng, store_lng, store_lat, store_type))
         connection.commit()
 
