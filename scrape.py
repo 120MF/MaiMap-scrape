@@ -42,7 +42,7 @@ store_list = soup.find('ul', class_='store_list')
 
 
 # 连接到数据库
-client = MongoClient("mongodb://salt:yelsjdhl@localhost:27017/?authSource=maimap")
+client = MongoClient("mongodb://salt:yelsjdhl@maimap-mysql.mfnest.tech:27017/?authSource=maimap")
 db = client['maimap']
 arcades_collection = db.arcades
 
