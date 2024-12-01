@@ -1,11 +1,12 @@
 import requests
 import time
-import pymysql
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
+from pymongo import MongoClient
+from bson import ObjectId, Decimal128
 
 # 配置 WebDriver
 options = webdriver.ChromeOptions()
@@ -39,23 +40,16 @@ driver.quit()
 soup = BeautifulSoup(page_content, 'html.parser')
 store_list = soup.find('ul', class_='store_list')
 
-# 数据库连接配置
-db_config = {
-    'host': 'maimap-mysql.mfnest.tech',
-    'port': 3306,
-    'user': 'root',
-    'password': 'yelsjdhl',
-    'database': 'maimap',
-    'charset': 'utf8mb4'
-}
 
 # 连接到数据库
-connection = pymysql.connect(**db_config)
-cursor = connection.cursor()
+client = MongoClient("mongodb://salt:yelsjdhl@localhost:27017/?authSource=maimap")
+db = client['maimap']
+arcades_collection = db.arcades
 
-# 获取arcades表的行数
-cursor.execute("SELECT COUNT(*) FROM arcades")
-row_count = cursor.fetchone()[0]
+max_store_id_document = arcades_collection.find_one(sort=[("store_id", -1)])
+max_store_id = max_store_id_document["store_id"] if max_store_id_document else 0
+
+print(f"Max store_id: {max_store_id}")
 
 # 提取每个 li 元素中的 store_name 和 store_address
 id = 1
@@ -64,7 +58,7 @@ for li in store_list.find_all('li'):
     store_address = li.find('span', class_='store_address').text.strip()
     store_type = "mai"
 
-    if id > row_count:
+    if id > max_store_id:
         # 发送请求获取位置信息
         response = requests.get('https://apis.map.qq.com/ws/geocoder/v1/', params={
             'address': store_address,
@@ -83,15 +77,25 @@ for li in store_list.find_all('li'):
         print(store_lat, store_lng)
         time.sleep(0.2)  # 每0.2秒发送一次请求
 
-        # 更新数据库
-        cursor.execute("""
-            INSERT INTO arcades (store_name, store_address, store_id, store_lat, store_lng, store_pos, store_type)
-            VALUES (%s, %s, %s, %s, %s, ST_GeomFromText('POINT(%s %s)'), %s)
-        """, (store_name, store_address, id, store_lat, store_lng, store_lng, store_lat, store_type))
-        connection.commit()
+        arcade_document = {
+            "store_name": store_name,
+            "store_address": store_address,
+            "store_id": id,
+            "store_lat": Decimal128(str(store_lat)) if store_lat is not None else None,
+            "store_lng": Decimal128(str(store_lng)) if store_lng is not None else None,
+            "store_type": store_type,
+            "arcade_dead": False,
+            "store_pos": {
+                "type": "Point",
+                "coordinates": [
+                    store_lng,
+                    store_lat
+                ] if store_lat is not None and store_lng is not None else []
+            }
+        }
+        arcades_collection.insert_one(arcade_document)
 
     id += 1
 
 # 关闭数据库连接
-cursor.close()
-connection.close()
+client.close()
